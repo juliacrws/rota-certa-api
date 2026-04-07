@@ -1,23 +1,24 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# URL de conexão. Aqui definimos o SQLite para desenvolvimento rápido.
-# No futuro, mudaremos apenas esta linha para a URL do PostgreSQL.
-SQLALCHEMY_DATABASE_URL = "sqlite:///./rota_certa.db"
+# 1. Busca a "Chave do Banco" no computador. Se não achar, usa o SQLite local.
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./rota_certa.db")
 
-# Criando o motor de conexão
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False} # Exigência apenas do SQLite
-)
+# 2. TRUQUE SÊNIOR: O Render entrega a URL como "postgres://", mas as versões
+# mais novas do SQLAlchemy exigem "postgresql://". Isso corrige o erro automaticamente.
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Sessão do banco (como se fosse a "janela" de comunicação aberta)
+# 3. O SQLite exige uma configuração extra que o Postgres não precisa.
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Classe base que usaremos para criar nossas tabelas depois
 Base = declarative_base()
 
-# Função que o FastAPI vai usar para abrir e fechar a conexão a cada requisição
 def get_db():
     db = SessionLocal()
     try:
