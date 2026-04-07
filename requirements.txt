@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+requests
+passlib
+bcrypt==3.2.0
+python-jose[cryptography]
+python-multipart
